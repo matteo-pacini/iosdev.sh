@@ -23,7 +23,7 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.1.0"
+VERSION="0.1.1"
 VERSION_NAME="A New Saga Begins"
 LICENSE="MIT"
 
@@ -138,6 +138,21 @@ is_virtual_machine() {
         return
     fi
     printf "false"
+}
+
+show_update_warning_if_needed() {
+    local SCRIPT_URL="https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh"
+    local TMP_FILE
+    TMP_FILE=$(mktemp)
+    trap 'rm -f $TMP_FILE' EXIT
+    curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE"
+    local TMP_VERSION
+    TMP_VERSION=$(grep -Eo '^VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
+    if [[ "$TMP_VERSION" != "$VERSION" ]]; then
+        lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
+        lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
+        echo ""
+    fi
 }
 
 ###########
@@ -377,6 +392,8 @@ if [[ "$(uname -m)" == "arm64" ]] && [[ "$EXPERIMENTAL" = false ]]; then
 fi
 
 configuration_action
+
+show_update_warning_if_needed
 
 prompt_action
 
