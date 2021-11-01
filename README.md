@@ -1,5 +1,3 @@
-# iosdev.sh
-
 ```
 ██╗ ██████╗ ███████╗██████╗ ███████╗██╗   ██╗  ███████╗██╗  ██╗
 ██║██╔═══██╗██╔════╝██╔══██╗██╔════╝██║   ██║  ██╔════╝██║  ██║
@@ -10,10 +8,6 @@
 ```
 
 A shell script that bootstraps iOS development environments.
-
-## Philosophy
-
-
 
 ## Usage
 
@@ -60,7 +54,9 @@ Arguments:
 
 - Install Xcode 13.1 and 13.2 (beta), and discard other versions of Xcode:
 
-```iosdev.sh --xcodes 13.1,13.2 --purge-xcodes```
+```
+iosdev.sh --xcodes 13.1,13.2 --purge-xcodes
+```
 
 - Install a local version of ruby 2.7.2
 
@@ -80,7 +76,9 @@ deactivate                                        // to deactivate it
 
 - Deactivate colors
 
-```iosdev.sh <your options> --no-color```
+```
+iosdev.sh <your options> --no-color
+```
 
 ## Limitations
 
