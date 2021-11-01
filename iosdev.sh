@@ -23,7 +23,7 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.1.3"
+VERSION="0.1.4"
 VERSION_NAME="A New Saga Begins"
 LICENSE="MIT"
 
@@ -84,17 +84,32 @@ entry() {
 # Functions #
 #############
 
+_DID_UPDATE_HOMEBREW=0
+
 install_homebrew_package_if_needed() {
     if ! command -v brew >/dev/null 2>&1; then
         lecho "$RED" "1" "Homebrew not found. Installing it..."
-        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" || {
+            lecho "$RED" "1" "Failed to install Homebrew. Exiting..."
+            exit 1
+        }
     else
-        brew update >/dev/null 2>&1
+        if [ $_DID_UPDATE_HOMEBREW -eq 0 ]; then
+            lecho "$GREEN" "1" "Homebrew found. Updating... ⌛️"
+            brew update >/dev/null 2>&1 || {
+                lecho "$RED" "1" "Homebrew update failed. Exiting..."
+                exit 1
+            }
+            _DID_UPDATE_HOMEBREW=1
+        fi
     fi
     local PACKAGE_NAME=${1##*/}
     if ! brew list -1 | grep "$PACKAGE_NAME" >/dev/null 2>&1; then
         lecho "$RED" "1" "Package $PACKAGE_NAME not found. Installing it..."
-        brew install "$1"
+        brew install "$1" || {
+            lecho "$RED" "1" "Failed to install $PACKAGE_NAME. Exiting..."
+            exit 1
+        }
     else
         lecho "$GREEN" "1" "Package $PACKAGE_NAME already installed."
     fi
@@ -109,7 +124,10 @@ install_xcode_if_needed() {
         lecho "$GREEN" 1 "Xcode $1 is already installed."
     else
         lecho "$RED" 1 "Xcode $1 is not installed. Installing it..."
-        NSUnbufferedIO=YES xcodes install "$1"
+        NSUnbufferedIO=YES xcodes install "$1" || {
+            lecho "$RED" 1 "Failed to install Xcode $1. Exiting..."
+            exit 1
+        }
     fi
 }
 
@@ -118,13 +136,19 @@ purge_xcodes() {
     for INSTALLED_XCODE in $INSTALLED_XCODES; do
         if ! [[ " ${XCODES[*]} " =~ " $INSTALLED_XCODE " ]]; then
             lecho "$RED" 1 "Uninstalling Xcode $INSTALLED_XCODE..."
-            NSUnbufferedIO=YES xcodes uninstall "$INSTALLED_XCODE"
+            NSUnbufferedIO=YES xcodes uninstall "$INSTALLED_XCODE" || {
+                lecho "$RED" 1 "Failed to uninstall Xcode $INSTALLED_XCODE. Exiting..."
+                exit 1
+            }
         fi
     done
 }
 
 select_xcode() {
-    xcodes select "$1"
+    xcodes select "$1" || {
+        lecho "$RED" 1 "Failed to select Xcode $1. Exiting..."
+        exit 1
+    }
 }
 
 is_virtual_machine() {
@@ -151,14 +175,59 @@ show_update_warning_if_needed() {
     local TMP_FILE
     TMP_FILE=$(mktemp)
     trap 'rm -f $TMP_FILE' EXIT
-    curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE"
-    local TMP_VERSION
-    TMP_VERSION=$(grep -Eo '^VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
-    if [[ "$TMP_VERSION" != "$VERSION" ]]; then
-        lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
-        lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
-        echo ""
+    curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE" 2> /dev/null && {
+        local TMP_VERSION
+        TMP_VERSION=$(grep -Eo '^VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
+        if [[ "$TMP_VERSION" != "$VERSION" ]]; then
+            lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
+            lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
+            echo ""
+        fi
+    }
+}
+
+# $1 is the Ruby version to install.
+# $2 is the Ruby name.
+install_ruby_if_needed() {
+    lecho "$GREEN" 1 "Building portable Ruby $1 in folder ./$2... ⏳"
+    ruby-install ruby "$1" -i "$(realpath "./$2")" --no-reinstall -c -j "$(sysctl -n hw.physicalcpu)" > "$2.build.log" 2>&1 || {
+        lecho "$RED" 1 "Failed to build Ruby $1. See $2.build.log for more information."
+        exit 1
+    }
+    rm -rf "$2.build.log" >/dev/null 2>&1
+}
+
+create_ruby_activation_script() {
+    lecho "$GREEN" 1 "Building done, creating activation script: ./$1_activate.sh."
+cat <<EOF > ${1}_activate.sh
+function fn_exists() {
+    if [ -n "\$ZSH_VERSION" ]; then
+        type "\$1"| grep -q "function"
+    else
+        type -t "\$1"| grep -q "function"
     fi
+}
+if fn_exists "deactivate"; then
+    echo "Environment already activated."
+    echo "Please run 'deactivate' to deactivate it."
+else
+    PREVIOUS_GEM_HOME="\$GEM_HOME"
+    PREVIOUS_GEM_PATH="\$GEM_PATH"
+    PREVIOUS_PATH="\$PATH"
+    export GEM_HOME="$(realpath "./$1")/gems"
+    export GEM_PATH="$(realpath "./$1")/gems"
+    export PATH="$(realpath "./$1")/bin:$(realpath "./$1")/gems/bin:$PATH"
+    function deactivate() {
+        export GEM_HOME="\$PREVIOUS_GEM_HOME"
+        export GEM_PATH="\$PREVIOUS_GEM_PATH"
+        export PATH="\$PREVIOUS_PATH"
+        unset PREVIOUS_GEM_HOME
+        unset PREVIOUS_GEM_PATH
+        unset PREVIOUS_PATH
+        unset -f deactivate
+    }
+fi
+EOF
 }
 
 ###########
@@ -307,10 +376,7 @@ xcodes_action() {
         fi
         if [[ "$ACTIVE_XCODE" != "" ]]; then
             lecho "$YELLOW" 1 "Setting active Xcode to "$ACTIVE_XCODE"..."
-            select_xcode "$ACTIVE_XCODE" || {
-                lecho "$RED" 1 "Could not set Xcode $ACTIVE_XCODE as active."
-                exit 1
-            }
+            select_xcode "$ACTIVE_XCODE"
         fi
     else
         lecho "$GREEN" 1 "Nothing to do here."
@@ -333,44 +399,22 @@ make_portable_ruby_action() {
     if [[ -n "$RUBY_VERSION" ]]; then
         install_homebrew_package_if_needed "ruby-install"
         install_homebrew_package_if_needed "coreutils"
-        lecho "$GREEN" 1 "Building portable Ruby $RUBY_VERSION in folder ./$RUBY_NAME... ⏳"
-        ruby-install ruby "$RUBY_VERSION" -i "$(realpath ./$RUBY_NAME)" --no-reinstall -c -j "$(sysctl -n hw.physicalcpu)" > "$RUBY_NAME.build.log" 2>&1 || {
-            lecho "$RED" 1 "Failed to build Ruby $RUBY_VERSION. See $RUBY_NAME.build.log for more information."
-            exit 1
-        }
-        lecho "$GREEN" 1 "Building done, creating activation script: ./${RUBY_NAME}_activate.sh."
-cat <<EOF > ${RUBY_NAME}_activate.sh
-function fn_exists() {
-    if [ -n "\$ZSH_VERSION" ]; then
-        type "\$1"| grep -q "function"
-    else
-        type -t "\$1"| grep -q "function"
-    fi
-}
-if fn_exists "deactivate"; then
-    echo "Environment already activated."
-    echo "Please run 'deactivate' to deactivate it."
-else
-    PREVIOUS_GEM_HOME="\$GEM_HOME"
-    PREVIOUS_GEM_PATH="\$GEM_PATH"
-    PREVIOUS_PATH="\$PATH"
-    export GEM_HOME="$(realpath "./$RUBY_NAME")/gems"
-    export GEM_PATH="$(realpath "./$RUBY_NAME")/gems"
-    export PATH="$(realpath "./$RUBY_NAME")/bin:$(realpath "./$RUBY_NAME")/gems/bin:$PATH"
-    function deactivate() {
-        export GEM_HOME="\$PREVIOUS_GEM_HOME"
-        export GEM_PATH="\$PREVIOUS_GEM_PATH"
-        export PATH="\$PREVIOUS_PATH"
-        unset PREVIOUS_GEM_HOME
-        unset PREVIOUS_GEM_PATH
-        unset PREVIOUS_PATH
-        unset -f deactivate
-    }
-fi
-EOF
+        install_ruby_if_needed "$RUBY_VERSION" "$RUBY_NAME"
+        create_ruby_activation_script "$RUBY_NAME"
         lecho "$BOLD_WHITE" 1 "Done - source the script to activate the portable ruby!"
     else
         lecho "$GREEN" 1 "Nothing to do here."
+    fi
+}
+
+clear_palette_action() {
+    if [[ "$COLOR_OUTPUT" = false ]]; then
+        BOLD_WHITE=""
+        WHITE=""
+        RED=""
+        GREEN=""
+        YELLOW=""   
+        NC="" 
     fi
 }
 
@@ -400,14 +444,7 @@ fi
 
 parse_command_line_arguments_action "$@"
 
-if [[ "$COLOR_OUTPUT" = false ]]; then
-    BOLD_WHITE=""
-    WHITE=""
-    RED=""
-    GREEN=""
-    YELLOW=""   
-    NC="" 
-fi
+clear_palette_action
 
 system_info_action
 

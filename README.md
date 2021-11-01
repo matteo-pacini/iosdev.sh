@@ -84,6 +84,27 @@ deactivate                                        // to deactivate it
 iosdev.sh <your options> --no-color
 ```
 
+## Automate
+
+You can use `expect` combined with `--no-color` to automate the script.
+
+A simple example would be:
+
+```
+#!/usr/local/bin/expect -f
+
+set timeout -1
+set password [lindex $argv 0]
+spawn ./iosdev.sh --xcodes 13.1,13.2 --purge-xcodes --active-xcode 13.1 --no-color
+match_max 100000
+
+expect -exact "Do you want to continue? \[y/n\] "
+send -- "y\r"
+expect -exact "macOS User Password: "
+send -- "$password\r"
+expect eof
+```
+
 ## Limitations
 
 - Portable ruby installations are not relocatable to different folders
