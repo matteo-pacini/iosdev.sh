@@ -361,11 +361,12 @@ fi
 parse_command_line_arguments_action "$@"
 
 if [[ "$COLOR_OUTPUT" = false ]]; then
-    BOLD_WHITE="$NC"
-    WHITE="$NC"
-    RED="$NC"
-    GREEN="$NC"
-    YELLOW="$NC"    
+    BOLD_WHITE=""
+    WHITE=""
+    RED=""
+    GREEN=""
+    YELLOW=""   
+    NC="" 
 fi
 
 system_info_action
