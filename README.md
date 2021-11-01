@@ -18,17 +18,21 @@ Usage:
 Arguments:
     --xcodes <comma separated list>
         List of Xcode versions to install
-        e.g. iosdev.sh --xcodes 13.1,13.2
+        e.g. iosdev.sh --xcodes 13.1,13.2 
     --purge-xcodes
         Purge installed Xcode versions that are not in the "--xcodes" list.
         This flag does nothing if "--xcodes" is not specified.
         e.g. assuming Xcode 12.5.1 is installed:
         ./iosdev.sh --xcodes 13.1,13.2 --purge-xcodes
         This will install Xcode 13.1 and 13.2 and purge Xcode 12.5.1.
+    --active-xcode <version>
+        Select the active Xcode version.
+        This flag does nothing if "--xcodes" is not specified.
+        e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
     --no-color
         Disable color output.
     --experimental
-        Enable experimental features.
+        Enable experimental features. 
         This option is not recommended, as it may break the script or have an unexpected behavior.
         Current experimental features are:
             - M1 macs support

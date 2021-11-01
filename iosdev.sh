@@ -23,7 +23,7 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.1.2"
+VERSION="0.1.3"
 VERSION_NAME="A New Saga Begins"
 LICENSE="MIT"
 
@@ -32,6 +32,8 @@ LICENSE="MIT"
 #################
 
 XCODES=()
+
+ACTIVE_XCODE=
 
 PURGE_XCODES=false
 
@@ -121,6 +123,10 @@ purge_xcodes() {
     done
 }
 
+select_xcode() {
+    xcodes select "$1"
+}
+
 is_virtual_machine() {
     # Processor unknown
     if system_profiler SPHardwareDataType | grep -q "Unknown"; then
@@ -174,6 +180,10 @@ parse_command_line_arguments_action() {
             # Split comma separated values in $1 and store them in XCODES
             IFS=',' read -ra XCODES <<< "$1"
             ;;
+        --active-xcode)
+            shift
+            ACTIVE_XCODE="$1"
+            ;;
         --no-color)
             COLOR_OUTPUT=false
             ;;
@@ -213,6 +223,10 @@ Arguments:
         e.g. assuming Xcode 12.5.1 is installed:
         ./iosdev.sh --xcodes 13.1,13.2 --purge-xcodes
         This will install Xcode 13.1 and 13.2 and purge Xcode 12.5.1.
+    --active-xcode <version>
+        Select the active Xcode version.
+        This flag does nothing if "--xcodes" is not specified.
+        e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
     --no-color
         Disable color output.
     --experimental
@@ -242,7 +256,6 @@ system_info_action() {
     entry "$GREEN" 1 "Cores" "$(sysctl -n hw.physicalcpu)"
     entry "$GREEN" 1 "RAM (GB)" "$(sysctl -n hw.memsize | awk '{print $1/1024/1024/1024}')"
     entry "$GREEN" 1 "User" "$(whoami)"
-    entry "$GREEN" 1 "Hostname" "$(hostname)"
     entry "$GREEN" 1 "Shell" "$($SHELL --version)"
     entry "$GREEN" 1 "Free space on disk (GB)" "$(df -h / | tail -1 | awk '{print $4}')"
     echo ""
@@ -262,6 +275,11 @@ configuration_action() {
         entry "$GREEN" 2 "Xcodes to install" "${XCODES[*]}"
     fi
     entry "$GREEN" 2 "Purge Xcodes flag" "${PURGE_XCODES}"
+    if [[ $ACTIVE_XCODE != "" ]]; then
+        entry "$GREEN" 2 "Active Xcode" "${ACTIVE_XCODE}"
+    else
+        entry "$GREEN" 2 "Active Xcode" "<none>"
+    fi
     lecho "$YELLOW" 1 "Ruby"
     if [ -z "$RUBY_VERSION" ]; then
         entry "$GREEN" 2 "Ruby version" "<none>"
@@ -286,6 +304,13 @@ xcodes_action() {
         if [[ "$PURGE_XCODES" = true ]]; then
             lecho "$YELLOW" 1 "Purging Xcodes..."
             purge_xcodes
+        fi
+        if [[ "$ACTIVE_XCODE" != "" ]]; then
+            lecho "$YELLOW" 1 "Setting active Xcode to "$ACTIVE_XCODE"..."
+            select_xcode "$ACTIVE_XCODE" || {
+                lecho "$RED" 1 "Could not set Xcode $ACTIVE_XCODE as active."
+                exit 1
+            }
         fi
     else
         lecho "$GREEN" 1 "Nothing to do here."
