@@ -84,6 +84,10 @@ iosdev.sh <your options> --no-color
 
 - Portable ruby installations are not relocatable to different folders
 
+## Development
+
+- Visual Studio Code + shellcheck extension
+
 ## License
 
 Licensed under the MIT License.
