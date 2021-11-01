@@ -23,7 +23,7 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.1.1"
+VERSION="0.1.2"
 VERSION_NAME="A New Saga Begins"
 LICENSE="MIT"
 
@@ -391,9 +391,15 @@ if [[ "$(uname -m)" == "arm64" ]] && [[ "$EXPERIMENTAL" = false ]]; then
     exit 1
 fi
 
-configuration_action
-
 show_update_warning_if_needed
+
+if [[ -d "/Applications/Xcodes.app" ]]; then
+    lecho "$RED" 0 "This script is incompatible with the Xcodes.app (found in /Applications)."
+    lecho "$RED" 0 "If you installed it via Homebrew, please run 'brew uninstall homebrew/cask/xcodes' and try again."
+    exit 1
+fi
+
+configuration_action
 
 prompt_action
 
