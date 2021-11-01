@@ -9,6 +9,13 @@
 
 A shell script that bootstraps iOS development environments.
 
+## How It Works
+
+`iosdev.sh` combines a variety of different tools into one script:
+- [Homebrew](https://github.com/Homebrew/brew) (to install packages)
+- [xcodes](https://githu[b.com/RobotsAndPencils/xcodes) and [aria2](https://aria2.github.io/) (to download and manage Xcode versions)
+- [ruby-install](https://github.com/postmodern/ruby-install) (to create ruby installations)
+
 ## Usage
 
 ```
@@ -60,6 +67,12 @@ Arguments:
 
 ```
 iosdev.sh --xcodes 13.1,13.2 --purge-xcodes
+```
+
+- Install Xcode 13.2 and make it active:
+
+```
+iosdev.sh --xcodes 13.2 --active-xcode 13.2
 ```
 
 - Install a local version of ruby 2.7.2
