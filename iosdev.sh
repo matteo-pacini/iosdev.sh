@@ -23,7 +23,7 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.2.0"
+VERSION="0.2.1"
 VERSION_NAME="Semi"
 LICENSE="MIT"
 
@@ -185,6 +185,9 @@ show_update_warning_if_needed() {
         if [[ "$TMP_VERSION" != "$VERSION" ]]; then
             lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
             lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
+            lecho "$YELLOW" 0 "To update to the latest version, please run:"
+            lecho "$BOLD_WHITE" 0 "curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh"
+            lecho "$BOLD_WHITE" 0 "chmod +x /usr/local/bin/iosdev.sh"
             echo ""
         fi
     }
