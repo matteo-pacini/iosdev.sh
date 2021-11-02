@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.2.2"
+readonly VERSION="0.2.3"
 readonly VERSION_NAME="Semi"
 readonly LICENSE="MIT"
 
@@ -184,7 +184,7 @@ show_update_warning_if_needed() {
     trap "rm -f $TMP_FILE" EXIT
     curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE" 2> /dev/null && {
         local TMP_VERSION
-        TMP_VERSION=$(grep -Eo '^VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
+        TMP_VERSION=$(grep -Eo 'readonly VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
         if [[ "$TMP_VERSION" != "$VERSION" ]]; then
             lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
             lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
