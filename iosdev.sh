@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #####################################################################################
 # Copyright (c) 2021 Matteo Pacini                                                  #
@@ -22,10 +22,12 @@
 # SOFTWARE.                                                                         #
 #####################################################################################
 
-AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.2.1"
-VERSION_NAME="Semi"
-LICENSE="MIT"
+set -euo pipefail
+
+readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
+readonly VERSION="0.2.2"
+readonly VERSION_NAME="Semi"
+readonly LICENSE="MIT"
 
 #################
 # Configuration #
@@ -178,7 +180,8 @@ show_update_warning_if_needed() {
     local SCRIPT_URL="https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh"
     local TMP_FILE
     TMP_FILE=$(mktemp)
-    trap 'rm -f $TMP_FILE' EXIT
+    # shellcheck disable=SC2064
+    trap "rm -f $TMP_FILE" EXIT
     curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE" 2> /dev/null && {
         local TMP_VERSION
         TMP_VERSION=$(grep -Eo '^VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
@@ -222,7 +225,7 @@ create_ruby_activation_script() {
 cat <<EOF > "$1_activate.sh"
 # shellcheck disable=SC2148
 fn_exists() {
-    if [ -n "\$ZSH_VERSION" ]; then
+    if [ -n "\${ZSH_VERSION-}" ]; then
         type "\$1"| grep -q "function"
     else
         type -t "\$1"| grep -q "function"
@@ -232,8 +235,8 @@ if fn_exists "$1_deactivate"; then
     echo "Environment already activated."
     echo "Please run '$1_deactivate' to deactivate it."
 else
-    PREVIOUS_GEM_HOME="\$GEM_HOME"
-    PREVIOUS_GEM_PATH="\$GEM_PATH"
+    PREVIOUS_GEM_HOME="\${GEM_HOME-}"
+    PREVIOUS_GEM_PATH="\${GEM_PATH-}"
     PREVIOUS_PATH="\$PATH"
     GEM_HOME="\$(realpath "./$1")/gems"
     export GEM_HOME
