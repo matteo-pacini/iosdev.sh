@@ -60,10 +60,6 @@ Arguments:
 
 ## Installation
 
-## Homebrew
-
-    brew install zi0p4tch0/taps/iosdev.sh
-
 ### Manually
 
     curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh
