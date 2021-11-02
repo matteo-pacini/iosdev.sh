@@ -184,7 +184,7 @@ show_update_warning_if_needed() {
     trap "rm -f $TMP_FILE" EXIT
     curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE" 2> /dev/null && {
         local TMP_VERSION
-        TMP_VERSION=$(grep -Eo 'readonly VERSION="[^"]+"' "$TMP_FILE" | cut -d"=" -f2 | sed s/\"//g)   
+        TMP_VERSION=$(grep -Eo 'VERSION="[^"]+"' "$TMP_FILE" | head -n 1 | cut -d"=" -f2 | sed s/\"//g)   
         if [[ "$TMP_VERSION" != "$VERSION" ]]; then
             lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
             lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
