@@ -23,8 +23,8 @@
 #####################################################################################
 
 AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-VERSION="0.1.4"
-VERSION_NAME="A New Saga Begins"
+VERSION="0.2.0"
+VERSION_NAME="Semi"
 LICENSE="MIT"
 
 #################
@@ -44,6 +44,8 @@ EXPERIMENTAL=false
 RUBY_VERSION=
 
 RUBY_NAME="ruby"
+
+RUBY_GEMS=()
 
 ##############
 # Formatting #
@@ -134,6 +136,8 @@ install_xcode_if_needed() {
 purge_xcodes() {
     INSTALLED_XCODES=$(xcodes installed | awk '{print $1}')
     for INSTALLED_XCODE in $INSTALLED_XCODES; do
+        # https://stackoverflow.com/a/15394738/2890168
+        # shellcheck disable=SC2076
         if ! [[ " ${XCODES[*]} " =~ " $INSTALLED_XCODE " ]]; then
             lecho "$RED" 1 "Uninstalling Xcode $INSTALLED_XCODE..."
             NSUnbufferedIO=YES xcodes uninstall "$INSTALLED_XCODE" || {
@@ -195,36 +199,53 @@ install_ruby_if_needed() {
         exit 1
     }
     rm -rf "$2.build.log" >/dev/null 2>&1
+    create_ruby_activation_script "$2"
+    if ! [[ ${#RUBY_GEMS[@]} -eq 0 ]]; then
+        # shellcheck source=/dev/null
+        source "./$2_activate.sh"
+        lecho "$GREEN" 1 "Installing Ruby gems: ${RUBY_GEMS[*]}... ⏳"
+        for RUBY_GEM in "${RUBY_GEMS[@]}"; do
+            gem install "$RUBY_GEM" > "$2.gems.log" 2>&1 || {
+                lecho "$RED" 1 "Failed to install gem $RUBY_GEM. See $2.gems.log for more information."
+                exit 1
+            }
+        done
+        rm -rf "$2.gems.log" >/dev/null 2>&1
+    fi
 }
 
 create_ruby_activation_script() {
     lecho "$GREEN" 1 "Building done, creating activation script: ./$1_activate.sh."
-cat <<EOF > ${1}_activate.sh
-function fn_exists() {
+cat <<EOF > "$1_activate.sh"
+# shellcheck disable=SC2148
+fn_exists() {
     if [ -n "\$ZSH_VERSION" ]; then
         type "\$1"| grep -q "function"
     else
         type -t "\$1"| grep -q "function"
     fi
 }
-if fn_exists "deactivate"; then
+if fn_exists "$1_deactivate"; then
     echo "Environment already activated."
-    echo "Please run 'deactivate' to deactivate it."
+    echo "Please run '$1_deactivate' to deactivate it."
 else
     PREVIOUS_GEM_HOME="\$GEM_HOME"
     PREVIOUS_GEM_PATH="\$GEM_PATH"
     PREVIOUS_PATH="\$PATH"
-    export GEM_HOME="$(realpath "./$1")/gems"
-    export GEM_PATH="$(realpath "./$1")/gems"
-    export PATH="$(realpath "./$1")/bin:$(realpath "./$1")/gems/bin:$PATH"
-    function deactivate() {
+    GEM_HOME="\$(realpath "./$1")/gems"
+    export GEM_HOME
+    GEM_PATH="\$(realpath "./$1")/gems"
+    export GEM_PATH
+    PATH="\$(realpath "./$1")/bin:\$(realpath "./$1")/gems/bin:\$PATH"
+    export PATH
+    function $1_deactivate() {
         export GEM_HOME="\$PREVIOUS_GEM_HOME"
         export GEM_PATH="\$PREVIOUS_GEM_PATH"
         export PATH="\$PREVIOUS_PATH"
         unset PREVIOUS_GEM_HOME
         unset PREVIOUS_GEM_PATH
         unset PREVIOUS_PATH
-        unset -f deactivate
+        unset -f $1_deactivate
     }
 fi
 EOF
@@ -237,7 +258,7 @@ EOF
 parse_command_line_arguments_action() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-        -h|--help)
+        --help)
             usage_action
             exit 0
             ;;
@@ -266,6 +287,11 @@ parse_command_line_arguments_action() {
         --ruby-name)
             shift
             RUBY_NAME="$1"
+            ;;
+        --ruby-gems)
+            shift
+            # Split comma separated values in $1 and store them in RUBY_GEMS
+            IFS=',' read -ra RUBY_GEMS <<< "$1"
             ;;
         *)
             usage_action
@@ -310,7 +336,11 @@ Arguments:
         Specify the portable Ruby's folder name. Defaults to "ruby".
         This flag does nothing if "--ruby-version" is not specified.
         e.g. iosdev.sh --ruby-version 2.7.2 --ruby-name prettyruby
-    -h, --help
+    --ruby-gems <comma separated list>
+        Specify the Ruby gems to install into the portable ruby.
+        This flag does nothing if "--ruby-version" is not specified.
+        e.g. iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2
+    --help
         Show this help
 USAGE
 }
@@ -356,6 +386,11 @@ configuration_action() {
         entry "$GREEN" 2 "Ruby version" "$RUBY_VERSION"
     fi
     entry "$GREEN" 2 "Ruby name" "$RUBY_NAME"
+    if [[ ${#RUBY_GEMS[@]} -eq 0 ]]; then
+        entry "$GREEN" 2 "Gems to install" "<none>"
+    else
+        entry "$GREEN" 2 "Gems to install" "${RUBY_GEMS[*]}"
+    fi
     echo ""
 }
 
@@ -375,7 +410,7 @@ xcodes_action() {
             purge_xcodes
         fi
         if [[ "$ACTIVE_XCODE" != "" ]]; then
-            lecho "$YELLOW" 1 "Setting active Xcode to "$ACTIVE_XCODE"..."
+            lecho "$YELLOW" 1 "Setting active Xcode to $ACTIVE_XCODE..."
             select_xcode "$ACTIVE_XCODE"
         fi
     else
@@ -400,7 +435,6 @@ make_portable_ruby_action() {
         install_homebrew_package_if_needed "ruby-install"
         install_homebrew_package_if_needed "coreutils"
         install_ruby_if_needed "$RUBY_VERSION" "$RUBY_NAME"
-        create_ruby_activation_script "$RUBY_NAME"
         lecho "$BOLD_WHITE" 1 "Done - source the script to activate the portable ruby!"
     else
         lecho "$GREEN" 1 "Nothing to do here."

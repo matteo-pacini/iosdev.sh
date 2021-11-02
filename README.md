@@ -50,7 +50,11 @@ Arguments:
         Specify the portable Ruby's folder name. Defaults to "ruby".
         This flag does nothing if "--ruby-version" is not specified.
         e.g. iosdev.sh --ruby-version 2.7.2 --ruby-name prettyruby
-    -h, --help
+    --ruby-gems <comma separated list>
+        Specify the Ruby gems to install into the portable ruby.
+        This flag does nothing if "--ruby-version" is not specified.
+        e.g. iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2
+    --help
         Show this help
 ```
 
@@ -82,9 +86,9 @@ iosdev.sh --xcodes 13.2 --active-xcode 13.2
 - Install a local version of ruby 2.7.2
 
 ``` 
-iosdev.sh --ruby-version 2.7.2  // output: ./ruby folder
-source ./ruby_activate.sh       // to activate it
-deactivate                      // to deactivate it
+iosdev.sh --ruby-version 2.7.2       // output: ./ruby folder
+source ./ruby_activate.sh            // to activate it
+ruby_deactivate                      // to deactivate it
 ```
 
 - Install a local version of ruby 2.4.10 named "vruby"
@@ -92,13 +96,21 @@ deactivate                      // to deactivate it
 ``` 
 iosdev.sh --ruby-version 2.4.10 --ruby-name vruby // output: ./vruby folder
 source ./vruby_activate.sh                        // to activate it
-deactivate                                        // to deactivate it
+vruby_deactivate                                  // to deactivate it
+```
+
+- Install a local version of ruby 2.7.2 with the latest Fastlane and Cocoapods 1.11.2 gems
+
+``` 
+iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2       // output: ./ruby folder
+source ./ruby_activate.sh                                                  // to activate it
+ruby_deactivate                                                            // to deactivate it
 ```
 
 - Deactivate colors
 
 ```
-iosdev.sh <your options> --no-color
+iosdev.sh [...] --no-color
 ```
 
 ## Automate
@@ -121,10 +133,6 @@ expect -exact "macOS User Password: "
 send -- "$password\r"
 expect eof
 ```
-
-## Limitations
-
-- Portable ruby installations are not relocatable to different folders
 
 ## Development
 
