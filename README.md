@@ -9,6 +9,8 @@
 
 A shell script that bootstraps iOS development environments.
 
+<img src="./iosdev.svg">
+
 ## How It Works
 
 `iosdev.sh` combines a variety of different tools into one script:
