@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.2.3"
+readonly VERSION="0.2.4"
 readonly VERSION_NAME="Semi"
 readonly LICENSE="MIT"
 
@@ -53,7 +53,10 @@ RUBY_GEMS=()
 # Formatting #
 ##############
 
-# Palette
+###########
+# Palette #
+###########
+
 BOLD_WHITE="\033[1m"
 WHITE="\033[0m"
 RED="\033[0;31m"
@@ -61,35 +64,41 @@ GREEN="\033[0;32m"
 YELLOW="\033[0;33m"
 NC='\033[0m'
 
-# $1 sets the title color.
-# $2 adds "n" padding characters to the left of the entry.
-# $3 is the title.
+# Left-padded echo.
+# Prints a message, left-padded with spaces.
+# $1: title color.
+# $2: padding level.
+# $3: message.
 lecho() {
-    local LEFT_PADDING=""
+    local left_padding=""
     for (( i=0; i<$2; i++ )); do
-        LEFT_PADDING="$LEFT_PADDING "
+        left_padding="$left_padding "
     done
-    echo -e "$LEFT_PADDING$1$3$NC"
+    echo -e "$left_padding$1$3$NC"
 }
 
-# $1 sets the color of left-hand side.
-# $2 adds "n" padding characters to the left of the entry.
-# $3 is the left-hand side text.
-# $4 is the right-hand side text.
+# Left-padded entry.
+# Prints a message in the format "left: right", left-padded with spaces.
+# $1: color for "left".
+# $2: padding level for "left".
+# $3: "left" message.
+# $4: "right" message.
 entry() {
-    local LEFT_PADDING=""
+    local left_padding=""
     for (( i=0; i<$2; i++ )); do
-        LEFT_PADDING="$LEFT_PADDING "
+        left_padding="$left_padding "
     done
-    printf "%s$1%s$NC: %s\n" "$LEFT_PADDING" "$3" "$4"
+    printf "%s$1%s$NC: %s\n" "$left_padding" "$3" "$4"
 }
 
 #############
 # Functions #
 #############
 
-_DID_UPDATE_HOMEBREW=0
+_did_update_homebrew=0
 
+# Installs a package using Homebrew if it is not already installed.
+# $1: package name.
 install_homebrew_package_if_needed() {
     if ! command -v brew >/dev/null 2>&1; then
         lecho "$RED" "1" "Homebrew not found. Installing it..."
@@ -98,36 +107,40 @@ install_homebrew_package_if_needed() {
             exit 1
         }
     else
-        if [ $_DID_UPDATE_HOMEBREW -eq 0 ]; then
+        if [ $_did_update_homebrew -eq 0 ]; then
             lecho "$GREEN" "1" "Homebrew found. Updating... ⌛️"
             brew update >/dev/null 2>&1 || {
                 lecho "$RED" "1" "Homebrew update failed. Exiting..."
                 exit 1
             }
-            _DID_UPDATE_HOMEBREW=1
+            _did_update_homebrew=1
         fi
     fi
-    local PACKAGE_NAME=${1##*/}
-    if ! brew list -1 | grep "$PACKAGE_NAME" >/dev/null 2>&1; then
-        lecho "$RED" "1" "Package $PACKAGE_NAME not found. Installing it..."
+    local package_name=${1##*/}
+    if ! brew list -1 | grep "$package_name" >/dev/null 2>&1; then
+        lecho "$RED" "1" "Package $package_name not found. Installing it..."
         brew install "$1" || {
-            lecho "$RED" "1" "Failed to install $PACKAGE_NAME. Exiting..."
+            lecho "$RED" "1" "Failed to install $package_name. Exiting..."
             exit 1
         }
     else
-        lecho "$GREEN" "1" "Package $PACKAGE_NAME already installed."
+        lecho "$GREEN" "1" "Package $package_name is already installed."
     fi
 }
 
+# Checks if a specific version of Xcode is installed
+# $1: Xcode version to check.
 is_xcode_installed() {
     xcodes installed | grep -q "$1"
 }
 
+# Installs an Xcode if it is not already installed.
+# $1: Xcode version to install.
 install_xcode_if_needed() {
     if is_xcode_installed "$1"; then
         lecho "$GREEN" 1 "Xcode $1 is already installed."
     else
-        lecho "$RED" 1 "Xcode $1 is not installed. Installing it..."
+        lecho "$RED" 1 "Xcode $1 is not installed. Installing it... ⌛️"
         NSUnbufferedIO=YES xcodes install "$1" || {
             lecho "$RED" 1 "Failed to install Xcode $1. Exiting..."
             exit 1
@@ -135,21 +148,25 @@ install_xcode_if_needed() {
     fi
 }
 
+# Purges all Xcodes that are not in the --xcodes list.
 purge_xcodes() {
-    INSTALLED_XCODES=$(xcodes installed | awk '{print $1}')
-    for INSTALLED_XCODE in $INSTALLED_XCODES; do
+    local installed_xcodes
+    installed_xcodes=$(xcodes installed | awk '{print $1}')
+    for xcode in $installed_xcodes; do
         # https://stackoverflow.com/a/15394738/2890168
         # shellcheck disable=SC2076
-        if ! [[ " ${XCODES[*]} " =~ " $INSTALLED_XCODE " ]]; then
-            lecho "$RED" 1 "Uninstalling Xcode $INSTALLED_XCODE..."
-            NSUnbufferedIO=YES xcodes uninstall "$INSTALLED_XCODE" || {
-                lecho "$RED" 1 "Failed to uninstall Xcode $INSTALLED_XCODE. Exiting..."
+        if ! [[ " ${XCODES[*]} " =~ " $xcode " ]]; then
+            lecho "$RED" 1 "Uninstalling Xcode $xcode..."
+            NSUnbufferedIO=YES xcodes uninstall "$xcode" || {
+                lecho "$RED" 1 "Failed to uninstall Xcode $xcode. Exiting..."
                 exit 1
             }
         fi
     done
 }
 
+# Sets the active Xcode.
+# $1: Xcode version to activate.
 select_xcode() {
     xcodes select "$1" || {
         lecho "$RED" 1 "Failed to select Xcode $1. Exiting..."
@@ -157,18 +174,19 @@ select_xcode() {
     }
 }
 
+# Prints "true" is this is a virtual machine, "false" otherwise.
 is_virtual_machine() {
-    # Processor unknown
+    # Processor unknown check
     if system_profiler SPHardwareDataType | grep -q "Unknown"; then
         printf "true"
         return
     fi
-    # QEMU RAM
+    # QEMU RAM check
     if system_profiler SPMemoryDataType | grep -q "QEMU"; then
         printf "true"
         return
     fi
-    # Vmx network adapter
+    # Vmx network adapter check
     if system_profiler SPEthernetDataType | grep -q "Vmx"; then
         printf "true"
         return
@@ -176,31 +194,16 @@ is_virtual_machine() {
     printf "false"
 }
 
-show_update_warning_if_needed() {
-    local SCRIPT_URL="https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh"
-    local TMP_FILE
-    TMP_FILE=$(mktemp)
-    # shellcheck disable=SC2064
-    trap "rm -f $TMP_FILE" EXIT
-    curl -fsSL "$SCRIPT_URL" -o "$TMP_FILE" 2> /dev/null && {
-        local TMP_VERSION
-        TMP_VERSION=$(grep -Eo 'VERSION="[^"]+"' "$TMP_FILE" | head -n 1 | cut -d"=" -f2 | sed s/\"//g)   
-        if [[ "$TMP_VERSION" != "$VERSION" ]]; then
-            lecho "$YELLOW" 0 "Latest version available on Github: $TMP_VERSION."
-            lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
-            lecho "$YELLOW" 0 "To update to the latest version, please run:"
-            lecho "$BOLD_WHITE" 0 "curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh"
-            lecho "$BOLD_WHITE" 0 "chmod +x /usr/local/bin/iosdev.sh"
-            echo ""
-        fi
-    }
-}
-
-# $1 is the Ruby version to install.
-# $2 is the Ruby name.
+# Installs a Ruby if it is not already installed.
+# $1: Ruby version to install.
+# $2: Ruby name (affects local folder + script names).
 install_ruby_if_needed() {
     lecho "$GREEN" 1 "Building portable Ruby $1 in folder ./$2... ⏳"
-    ruby-install ruby "$1" -i "$(realpath "./$2")" --no-reinstall -c -j "$(sysctl -n hw.physicalcpu)" > "$2.build.log" 2>&1 || {
+    ruby-install ruby "$1"      \
+        -i "$(realpath "./$2")" \
+        --no-reinstall          \
+        -c                      \
+        -j "$(sysctl -n hw.physicalcpu)" > "$2.build.log" 2>&1 || {
         lecho "$RED" 1 "Failed to build Ruby $1. See $2.build.log for more information."
         exit 1
     }
@@ -220,6 +223,8 @@ install_ruby_if_needed() {
     fi
 }
 
+# Create a Ruby activation script.
+# $1: Ruby name.
 create_ruby_activation_script() {
     lecho "$GREEN" 1 "Building done, creating activation script: ./$1_activate.sh."
 cat <<EOF > "$1_activate.sh"
@@ -261,6 +266,27 @@ EOF
 # Actions #
 ###########
 
+# Prints out a warning if the user is running an older version of the script
+update_action() {
+    local remote_version
+    remote_version=$(
+        curl -v --silent "https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh" 2>&1 |  
+        grep -Eo 'VERSION="([0-9\.]+)"' | 
+        cut -d"=" -f 2 | 
+        sed s/\"//g || {
+            echo "N/A"
+        }
+    )
+    if [ "$remote_version" != "$VERSION" ] && [ "$remote_version" != "N/A" ]; then
+        lecho "$YELLOW" 0 "Latest version available on Github: $remote_version."
+        lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
+        lecho "$YELLOW" 0 "To update to the latest version, please run:"
+        lecho "$BOLD_WHITE" 0 "curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh"
+        lecho "$BOLD_WHITE" 0 "chmod +x /usr/local/bin/iosdev.sh"
+        echo ""
+    fi
+}
+
 parse_command_line_arguments_action() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -273,11 +299,21 @@ parse_command_line_arguments_action() {
             ;;
         --xcodes)
             shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--xcodes accepts a comma separated list of values."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
             # Split comma separated values in $1 and store them in XCODES
             IFS=',' read -ra XCODES <<< "$1"
             ;;
         --active-xcode)
-            shift
+            shift          
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--active-xcode requires an argument."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
             ACTIVE_XCODE="$1"
             ;;
         --no-color)
@@ -288,14 +324,29 @@ parse_command_line_arguments_action() {
             ;;
         --ruby-version)
             shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--ruby-version requires an argument."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
             RUBY_VERSION="$1"
             ;;
         --ruby-name)
             shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--ruby-name requires an argument."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
             RUBY_NAME="$1"
             ;;
         --ruby-gems)
             shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--ruby-gems accepts a comma separated list of values."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
             # Split comma separated values in $1 and store them in RUBY_GEMS
             IFS=',' read -ra RUBY_GEMS <<< "$1"
             ;;
@@ -368,35 +419,15 @@ system_info_action() {
 
 configuration_action() {
     lecho "$YELLOW" 0 "Configuration"
-    if [ "$EXPERIMENTAL" = true ]; then
-        entry "$GREEN" 1 "Experimental features" "true"
-    else
-        entry "$GREEN" 1 "Experimental features" "false"
-    fi
+    entry "$GREEN" 1 "Experimental features" "$EXPERIMENTAL"
     lecho "$YELLOW" 1 "Xcodes"
-    if [[ ${#XCODES[@]} -eq 0 ]]; then
-        entry "$GREEN" 2 "Xcodes to install" "<none>"
-    else
-        entry "$GREEN" 2 "Xcodes to install" "${XCODES[*]}"
-    fi
+    entry "$GREEN" 2 "Xcodes to install" "${XCODES[*]:-<none>}"
     entry "$GREEN" 2 "Purge Xcodes flag" "${PURGE_XCODES}"
-    if [[ $ACTIVE_XCODE != "" ]]; then
-        entry "$GREEN" 2 "Active Xcode" "${ACTIVE_XCODE}"
-    else
-        entry "$GREEN" 2 "Active Xcode" "<none>"
-    fi
+    entry "$GREEN" 2 "Active Xcode" "${ACTIVE_XCODE:-<none>}"
     lecho "$YELLOW" 1 "Ruby"
-    if [ -z "$RUBY_VERSION" ]; then
-        entry "$GREEN" 2 "Ruby version" "<none>"
-    else
-        entry "$GREEN" 2 "Ruby version" "$RUBY_VERSION"
-    fi
+    entry "$GREEN" 2 "Ruby version" "${RUBY_VERSION:-<none>}"
     entry "$GREEN" 2 "Ruby name" "$RUBY_NAME"
-    if [[ ${#RUBY_GEMS[@]} -eq 0 ]]; then
-        entry "$GREEN" 2 "Gems to install" "<none>"
-    else
-        entry "$GREEN" 2 "Gems to install" "${RUBY_GEMS[*]}"
-    fi
+    entry "$GREEN" 2 "Gems to install" "${RUBY_GEMS[*]:-<none>}"
     echo ""
 }
 
@@ -408,8 +439,8 @@ xcodes_action() {
         install_homebrew_package_if_needed "robotsandpencils/made/xcodes"
         install_homebrew_package_if_needed "aria2"
         # Check / install Xcodes
-        for XCODE_VERSION in "${XCODES[@]}"; do
-            install_xcode_if_needed "$XCODE_VERSION"
+        for xcode_version in "${XCODES[@]}"; do
+            install_xcode_if_needed "$xcode_version"
         done
         if [[ "$PURGE_XCODES" = true ]]; then
             lecho "$YELLOW" 1 "Purging Xcodes..."
@@ -493,7 +524,7 @@ if [[ "$(uname -m)" == "arm64" ]] && [[ "$EXPERIMENTAL" = false ]]; then
     exit 1
 fi
 
-show_update_warning_if_needed
+update_action
 
 if [[ -d "/Applications/Xcodes.app" ]]; then
     lecho "$RED" 0 "This script is incompatible with the Xcodes.app (found in /Applications)."
