@@ -54,6 +54,9 @@ Arguments:
         Specify the Ruby gems to install into the portable ruby.
         This flag does nothing if "--ruby-version" is not specified.
         e.g. iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2
+    --homebrew-packages <comma separated list>
+        Specify the Homebrew packages to install.
+        e.g. iosdev.sh --homebrew-packages swiftlint,sourcery
     --help
         Show this help
 ```
