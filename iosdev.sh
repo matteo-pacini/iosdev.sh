@@ -475,7 +475,8 @@ xcodes_action() {
 
 prompt_action() {
     local RESPONSE
-    read -r -p "$(echo -e "${RED}Do you want to continue? [y/n] $NC")"  RESPONSE
+    # https://stackoverflow.com/a/49802113/2890168
+    read < /dev/tty -r -p "$(echo -e "${RED}Do you want to continue? [y/n] $NC")"  RESPONSE
     if [[ "$RESPONSE" != "y" ]]; then
         exit 0
     else

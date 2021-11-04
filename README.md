@@ -60,11 +60,16 @@ Arguments:
         Show this help
 ```
 
+## Run and forget
+
+```
+curl -LsS https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh | bash -s -- ARGUMENTS
+```
+
 ## Installation
 
     curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh
     chmod +x /usr/local/bin/iosdev.sh
-    iosdev.sh
 
 ## Examples
 
