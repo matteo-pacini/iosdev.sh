@@ -9,7 +9,7 @@
 
 A shell script that bootstraps iOS development environments.
 
-<img src="./iosdev.svg">
+(Demo at the bottom of the page)
 
 ## How It Works
 
@@ -62,10 +62,15 @@ Arguments:
 
 ## Installation
 
-### Manually
+## Run once
+
+    curl -LsS https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh | bash -s -- ARGUMENTS
+
+### Keep the script 
 
     curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh
     chmod +x /usr/local/bin/iosdev.sh
+    iosdev.sh
 
 ## Examples
 
@@ -134,7 +139,13 @@ expect eof
 
 ## Development
 
-- Visual Studio Code + shellcheck extension
+- Visual Studio Code 
+- shellcheck
+
+## Demo
+
+<img src="./iosdev.svg">
+
 
 ## License
 
