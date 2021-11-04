@@ -25,13 +25,15 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.2.4"
+readonly VERSION="0.3.0"
 readonly VERSION_NAME="Semi"
 readonly LICENSE="MIT"
 
 #################
 # Configuration #
 #################
+
+HOMEBREW_PACKAGES=()
 
 XCODES=()
 
@@ -350,6 +352,16 @@ parse_command_line_arguments_action() {
             # Split comma separated values in $1 and store them in RUBY_GEMS
             IFS=',' read -ra RUBY_GEMS <<< "$1"
             ;;
+        --homebrew-packages)
+            shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--homebrew-packages accepts a comma separated list of values."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
+            # Split comma separated values in $1 and store them in RUBY_GEMS
+            IFS=',' read -ra HOMEBREW_PACKAGES <<< "$1"
+            ;;
         *)
             usage_action
             exit 1
@@ -397,6 +409,9 @@ Arguments:
         Specify the Ruby gems to install into the portable ruby.
         This flag does nothing if "--ruby-version" is not specified.
         e.g. iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2
+    --homebrew-packages <comma separated list>
+        Specify the Homebrew packages to install.
+        e.g. iosdev.sh --homebrew-packages swiftlint,sourcery
     --help
         Show this help
 USAGE
@@ -428,6 +443,8 @@ configuration_action() {
     entry "$GREEN" 2 "Ruby version" "${RUBY_VERSION:-<none>}"
     entry "$GREEN" 2 "Ruby name" "$RUBY_NAME"
     entry "$GREEN" 2 "Gems to install" "${RUBY_GEMS[*]:-<none>}"
+    lecho "$YELLOW" 1 "Homebrew"
+    entry "$GREEN" 2 "Packages to install" "${HOMEBREW_PACKAGES[*]:-<none>}"
     echo ""
 }
 
@@ -476,6 +493,7 @@ make_portable_ruby_action() {
     else
         lecho "$GREEN" 1 "Nothing to do here."
     fi
+    echo ""
 }
 
 clear_palette_action() {
@@ -487,6 +505,18 @@ clear_palette_action() {
         YELLOW=""   
         NC="" 
     fi
+}
+
+homebrew_packages_action() {
+    lecho "$YELLOW" 0 "Homebrew"
+    if [[ ${#HOMEBREW_PACKAGES[@]} -gt 0 ]]; then
+        for package in "${HOMEBREW_PACKAGES[@]}"; do
+            install_homebrew_package_if_needed "$package"
+        done
+    else
+        lecho "$GREEN" 1 "Nothing to do here."
+    fi
+    echo ""
 }
 
 ##############
@@ -539,3 +569,5 @@ prompt_action
 xcodes_action
 
 make_portable_ruby_action
+
+homebrew_packages_action
