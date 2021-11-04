@@ -9,8 +9,6 @@
 
 A shell script that bootstraps iOS development environments.
 
-(Demo at the bottom of the page)
-
 ## How It Works
 
 `iosdev.sh` combines a variety of different tools into one script:
@@ -140,11 +138,6 @@ expect eof
 
 - Visual Studio Code 
 - shellcheck
-
-## Demo
-
-<img src="./iosdev.svg">
-
 
 ## License
 
