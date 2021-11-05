@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.4.0"
+readonly VERSION="0.4.1"
 readonly VERSION_NAME="For All Seasons"
 readonly LICENSE="MIT"
 
@@ -108,7 +108,7 @@ _did_update_homebrew=0
 install_homebrew_package_if_needed() {
     if ! command -v brew >/dev/null 2>&1; then
         lecho "$RED" "1" "Homebrew not found. Installing it..."
-        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" || {
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
             lecho "$RED" "1" "Failed to install Homebrew. Exiting..."
             exit 1
         }
@@ -545,7 +545,7 @@ install_oh_my_zsh_action() {
     if [[ "$INSTALL_OH_MY_ZSH" = true ]]; then
         if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
             lecho "$RED" 1 "Installing Oh My Zsh... ⌛️"
-            sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+            sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh && exit 0)"
             lecho "$GREEN" 1 "Done!"
         else
             lecho "$GREEN" 1 "Oh My Zsh is already installed."
