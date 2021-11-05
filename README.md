@@ -9,12 +9,22 @@
 
 A shell script that bootstraps iOS development environments.
 
+## Reason behind this
+
+I use [Proxmox VE](https://www.proxmox.com/en/proxmox-ve) to manage/run multiple *macOS* VMs (for work and fun).
+
+To keep everything tidy and manageable, I create a VM per project/contract (cloned from an existing template that contains a clean *macOs* installation).
+
+This script helps me bootstrapping development environments in those virtual machines.
+
 ## How It Works
 
-`iosdev.sh` combines a variety of different tools into one script:
+`iosdev.sh` combines a variety of different tools / frameworks into one shell script:
 - [Homebrew](https://github.com/Homebrew/brew) (to install packages)
 - [xcodes](https://githu[b.com/RobotsAndPencils/xcodes) and [aria2](https://aria2.github.io/) (to download and manage Xcode versions)
 - [ruby-install](https://github.com/postmodern/ruby-install) (to create ruby installations)
+- [oh-my-zsh](https://ohmyz.sh/) (framework that manages `zsh` configurations)
+- [powerlevel10k](https://github.com/romkatv/powerlevel10k) (awesome ZSH theme)
 
 ## Usage
 
@@ -57,8 +67,15 @@ Arguments:
     --homebrew-packages <comma separated list>
         Specify the Homebrew packages to install.
         e.g. iosdev.sh --homebrew-packages swiftlint,sourcery
+    --install-oh-my-zsh
+        Install Oh My Zsh.
+         e.g. iosdev.sh --install-oh-my-zsh
+    --install-oh-my-zsh-p10k
+        Install Oh My Zsh "powerlevel10k" theme.
+        This flag does nothing if "--install-oh-my-zsh" is not specified.
+        e.g. iosdev.sh --install-oh-my-zsh --install-oh-my-zsh-p10k
     --help
-        Show this help
+        Show this message
 ```
 
 ## Run and forget

@@ -25,8 +25,8 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.3.0"
-readonly VERSION_NAME="Semi"
+readonly VERSION="0.4.0"
+readonly VERSION_NAME="For All Seasons"
 readonly LICENSE="MIT"
 
 #################
@@ -50,6 +50,10 @@ RUBY_VERSION=
 RUBY_NAME="ruby"
 
 RUBY_GEMS=()
+
+INSTALL_OH_MY_ZSH=false
+
+INSTALL_OH_MY_ZSH_P10K=false
 
 ##############
 # Formatting #
@@ -362,6 +366,12 @@ parse_command_line_arguments_action() {
             # Split comma separated values in $1 and store them in RUBY_GEMS
             IFS=',' read -ra HOMEBREW_PACKAGES <<< "$1"
             ;;
+        --install-oh-my-zsh)
+            INSTALL_OH_MY_ZSH=true
+            ;;
+        --install-oh-my-zsh-p10k)
+            INSTALL_OH_MY_ZSH_P10K=true
+            ;;
         *)
             usage_action
             exit 1
@@ -412,8 +422,15 @@ Arguments:
     --homebrew-packages <comma separated list>
         Specify the Homebrew packages to install.
         e.g. iosdev.sh --homebrew-packages swiftlint,sourcery
+    --install-oh-my-zsh
+        Install Oh My Zsh.
+         e.g. iosdev.sh --install-oh-my-zsh
+    --install-oh-my-zsh-p10k
+        Install Oh My Zsh "powerlevel10k" theme.
+        This flag does nothing if "--install-oh-my-zsh" is not specified.
+        e.g. iosdev.sh --install-oh-my-zsh --install-oh-my-zsh-p10k
     --help
-        Show this help
+        Show this message
 USAGE
 }
 
@@ -445,6 +462,9 @@ configuration_action() {
     entry "$GREEN" 2 "Gems to install" "${RUBY_GEMS[*]:-<none>}"
     lecho "$YELLOW" 1 "Homebrew"
     entry "$GREEN" 2 "Packages to install" "${HOMEBREW_PACKAGES[*]:-<none>}"
+    lecho "$YELLOW" 1 "Oh My Zsh"
+    entry "$GREEN" 2 "Install" "${INSTALL_OH_MY_ZSH}"
+    entry "$GREEN" 2 "Install P10K theme" "${INSTALL_OH_MY_ZSH_P10K}"
     echo ""
 }
 
@@ -520,6 +540,32 @@ homebrew_packages_action() {
     echo ""
 }
 
+install_oh_my_zsh_action() {
+    lecho "$YELLOW" 0 "Oh My Zsh"
+    if [[ "$INSTALL_OH_MY_ZSH" = true ]]; then
+        if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+            lecho "$RED" 1 "Installing Oh My Zsh... ⌛️"
+            sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+            lecho "$GREEN" 1 "Done!"
+        else
+            lecho "$GREEN" 1 "Oh My Zsh is already installed."
+        fi
+        if [[ "$INSTALL_OH_MY_ZSH_P10K" = true ]]; then
+            if ! [[ -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]] || ! grep -q 'ZSH_THEME="powerlevel10k/powerlevel10k"' "$HOME/.zshrc"; then
+                lecho "$RED" 1 "Installing P10K theme for Oh My Zsh... ⌛️"
+                git clone --depth=1 "https://github.com/romkatv/powerlevel10k.git" "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+                lecho "$RED" 1 "Setting P10K theme in .zshrc..."
+                sed -i '' 's|\(ZSH_THEME="\).*\("\)|\1powerlevel10k/powerlevel10k\2|g' "$HOME/.zshrc"
+                lecho "$BOLD_WHITE" 1 "Done - please restart your shell to see the changes."
+            else
+                lecho "$GREEN" 1 "P10K theme is already installed."
+            fi
+        fi
+    else
+        lecho "$GREEN" 1 "Nothing to do here."
+    fi
+}
+
 ##############
 # Entrypoint #
 ##############
@@ -572,3 +618,5 @@ xcodes_action
 make_portable_ruby_action
 
 homebrew_packages_action
+
+install_oh_my_zsh_action
