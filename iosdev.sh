@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.5.0"
+readonly VERSION="0.5.1"
 readonly VERSION_NAME="Flow"
 readonly LICENSE="MIT"
 
@@ -278,6 +278,36 @@ simulator_runtime() {
     }
 }
 
+clean_up_simulator_and_run() {
+    local simulator=()
+    IFS=',' read -ra simulator <<< "$1"
+    local name
+    name=$(echo "${simulator[0]}" | xargs)
+    local device
+    device=$(echo "${simulator[1]}" | xargs)
+    local runtime
+    runtime=$(echo "${simulator[2]}" | xargs)
+    "$2" "$name" "$device" "$runtime"
+}
+
+print_simulator() {
+    lecho "$WHITE" 3 "name: \"$1\", device: \"$2\", runtime: \"$3\""
+}
+
+create_simulator() {
+    lecho "$RED" 1 "Creating simulator $1:$2:$3..."
+    local runtime
+    runtime=$(simulator_runtime "$(echo "$3" | xargs)")
+    if [[ $runtime == "none" ]]; then
+        lecho "$RED" 1 "Runtime $3 not found. Exiting..."
+        exit 1
+    fi
+    xcrun simctl create "$1" "$2" "$runtime" > /dev/null 2>&1 || {
+        lecho "$RED" 1 "Failed to create simulator $1:$2:$3. Exiting..."
+        exit 1
+    }
+}
+
 ###########
 # Actions #
 ###########
@@ -501,8 +531,8 @@ configuration_action() {
         entry "$GREEN" 2 "Simulators to create" "<none>"
     else
         lecho "$GREEN" 2 "Simulators to create: "
-        for SIMULATOR in "${SIMULATORS[@]:-<none>}"; do
-            lecho "$WHITE" 3 "$SIMULATOR"
+        for simulator in "${SIMULATORS[@]}"; do
+            clean_up_simulator_and_run "$simulator" print_simulator
         done
     fi
     entry "$GREEN" 2 "Purge flag" "${PURGE_SIMULATORS}"
@@ -618,26 +648,9 @@ simulators_action() {
                 exit 1
             }
         fi
-        lecho "$RED" 1 "Installing simulators... ⌛️"
+        lecho "$RED" 1 "Creating simulators... ⌛️"
         for simulator in "${SIMULATORS[@]}"; do
-            local CURRENT_SIMULATOR=()
-            IFS=',' read -ra CURRENT_SIMULATOR <<< "$simulator"
-            local CURRENT_SIMULATOR_NAME
-            CURRENT_SIMULATOR_NAME=$(echo "${CURRENT_SIMULATOR[0]}" | xargs)
-            local CURRENT_SIMULATOR_DEVICE
-            CURRENT_SIMULATOR_DEVICE=$(echo "${CURRENT_SIMULATOR[1]}" | xargs)
-            local CURRENT_SIMULATOR_RUNTIME
-            CURRENT_SIMULATOR_RUNTIME=$(simulator_runtime "$(echo "${CURRENT_SIMULATOR[2]}" | xargs)")
-            if [[ "$CURRENT_SIMULATOR_RUNTIME" = none ]]; then
-                lecho "$RED" 1 "Could not find runtime ${CURRENT_SIMULATOR[2]} in this list:"
-                xcrun simctl list runtimes
-                exit 1
-            else 
-                lecho "$RED" 1 "Creating simulator: $CURRENT_SIMULATOR_NAME,$CURRENT_SIMULATOR_DEVICE,$CURRENT_SIMULATOR_RUNTIME..."
-            fi
-            xcrun simctl create "$CURRENT_SIMULATOR_NAME" "$CURRENT_SIMULATOR_DEVICE" "$CURRENT_SIMULATOR_RUNTIME" > /dev/null || {
-                lecho "$RED" 1 "Could not create simulator: $simulator."
-            }
+            clean_up_simulator_and_run "$simulator" create_simulator
         done
         lecho "$BOLD_WHITE" 1 "Done!"
     else
