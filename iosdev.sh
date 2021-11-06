@@ -25,8 +25,8 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.4.1"
-readonly VERSION_NAME="For All Seasons"
+readonly VERSION="0.5.0"
+readonly VERSION_NAME="Flow"
 readonly LICENSE="MIT"
 
 #################
@@ -54,6 +54,10 @@ RUBY_GEMS=()
 INSTALL_OH_MY_ZSH=false
 
 INSTALL_OH_MY_ZSH_P10K=false
+
+SIMULATORS=()
+
+PURGE_SIMULATORS=false
 
 ##############
 # Formatting #
@@ -268,6 +272,12 @@ fi
 EOF
 }
 
+simulator_runtime() {
+    xcrun simctl list runtimes | grep "$1" | awk '{print $NF}' || { 
+        echo "none" 
+    }
+}
+
 ###########
 # Actions #
 ###########
@@ -276,7 +286,7 @@ EOF
 update_action() {
     local remote_version
     remote_version=$(
-        curl -v --silent "https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh" 2>&1 |  
+        curl -LsS "https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh" 2>&1 |  
         grep -Eo 'VERSION="([0-9\.]+)"' | 
         cut -d"=" -f 2 | 
         sed s/\"//g || {
@@ -372,6 +382,19 @@ parse_command_line_arguments_action() {
         --install-oh-my-zsh-p10k)
             INSTALL_OH_MY_ZSH_P10K=true
             ;;
+        --simulators)
+            shift
+            if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
+                lecho "$RED" 0 "--simulators accepts a pipe ('|') separated list of values."
+                lecho "$RED" 0 "Please see --help for more information."
+                exit 1
+            fi
+            # Split comma separated values in $1 and store them in RUBY_GEMS
+            IFS='|' read -ra SIMULATORS <<< "$1"
+            ;;
+         --purge-simulators)
+            PURGE_SIMULATORS=true
+            ;;
         *)
             usage_action
             exit 1
@@ -429,6 +452,14 @@ Arguments:
         Install Oh My Zsh "powerlevel10k" theme.
         This flag does nothing if "--install-oh-my-zsh" is not specified.
         e.g. iosdev.sh --install-oh-my-zsh --install-oh-my-zsh-p10k
+    --simulators <pipe separated list>
+        Create simulators.
+        Each entry must be in the format: <name>,<device>,<runtime>.
+        e.g. iosdev.sh --simulators "Simulator,iPhone 13,iOS 15.0|Simulator2,iPhone 12,iOS 14.4"
+     --purge-simulators
+        Delete all iOS simulators.
+        This flag does nothing if "--simulators" is not specified.
+        e.g. iosdev.sh --simulators "Simulator,iPhone 13,iOS 15.0" --purge-simulators
     --help
         Show this message
 USAGE
@@ -454,7 +485,7 @@ configuration_action() {
     entry "$GREEN" 1 "Experimental features" "$EXPERIMENTAL"
     lecho "$YELLOW" 1 "Xcodes"
     entry "$GREEN" 2 "Xcodes to install" "${XCODES[*]:-<none>}"
-    entry "$GREEN" 2 "Purge Xcodes flag" "${PURGE_XCODES}"
+    entry "$GREEN" 2 "Purge flag" "${PURGE_XCODES}"
     entry "$GREEN" 2 "Active Xcode" "${ACTIVE_XCODE:-<none>}"
     lecho "$YELLOW" 1 "Ruby"
     entry "$GREEN" 2 "Ruby version" "${RUBY_VERSION:-<none>}"
@@ -465,6 +496,16 @@ configuration_action() {
     lecho "$YELLOW" 1 "Oh My Zsh"
     entry "$GREEN" 2 "Install" "${INSTALL_OH_MY_ZSH}"
     entry "$GREEN" 2 "Install P10K theme" "${INSTALL_OH_MY_ZSH_P10K}"
+    lecho "$YELLOW" 1 "Simulators"
+    if [ -z "${SIMULATORS[*]:-}" ]; then
+        entry "$GREEN" 2 "Simulators to create" "<none>"
+    else
+        lecho "$GREEN" 2 "Simulators to create: "
+        for SIMULATOR in "${SIMULATORS[@]:-<none>}"; do
+            lecho "$WHITE" 3 "$SIMULATOR"
+        done
+    fi
+    entry "$GREEN" 2 "Purge flag" "${PURGE_SIMULATORS}"
     echo ""
 }
 
@@ -546,7 +587,7 @@ install_oh_my_zsh_action() {
         if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
             lecho "$RED" 1 "Installing Oh My Zsh... ⌛️"
             sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh && exit 0)"
-            lecho "$GREEN" 1 "Done!"
+            lecho "$BOLD_WHITE" 1 "Done - please restart your terminal to see the changes."
         else
             lecho "$GREEN" 1 "Oh My Zsh is already installed."
         fi
@@ -556,7 +597,7 @@ install_oh_my_zsh_action() {
                 git clone --depth=1 "https://github.com/romkatv/powerlevel10k.git" "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
                 lecho "$RED" 1 "Setting P10K theme in .zshrc..."
                 sed -i '' 's|\(ZSH_THEME="\).*\("\)|\1powerlevel10k/powerlevel10k\2|g' "$HOME/.zshrc"
-                lecho "$BOLD_WHITE" 1 "Done - please restart your shell to see the changes."
+                lecho "$BOLD_WHITE" 1 "Done - please restart your terminal to see the changes."
             else
                 lecho "$GREEN" 1 "P10K theme is already installed."
             fi
@@ -564,6 +605,45 @@ install_oh_my_zsh_action() {
     else
         lecho "$GREEN" 1 "Nothing to do here."
     fi
+    echo ""
+}
+
+simulators_action() {
+    lecho "$YELLOW" 0 "Simulators"
+    if [[ ${#SIMULATORS[@]} -gt 0 ]]; then
+        if [[ "$PURGE_SIMULATORS" = true ]]; then
+            lecho "$RED" 1 "Purging Simulators... ⌛️"
+            xcrun simctl delete all || {
+                lecho "$RED" 1 "Failed to purge simulators."
+                exit 1
+            }
+        fi
+        lecho "$RED" 1 "Installing simulators... ⌛️"
+        for simulator in "${SIMULATORS[@]}"; do
+            local CURRENT_SIMULATOR=()
+            IFS=',' read -ra CURRENT_SIMULATOR <<< "$simulator"
+            local CURRENT_SIMULATOR_NAME
+            CURRENT_SIMULATOR_NAME=$(echo "${CURRENT_SIMULATOR[0]}" | xargs)
+            local CURRENT_SIMULATOR_DEVICE
+            CURRENT_SIMULATOR_DEVICE=$(echo "${CURRENT_SIMULATOR[1]}" | xargs)
+            local CURRENT_SIMULATOR_RUNTIME
+            CURRENT_SIMULATOR_RUNTIME=$(simulator_runtime "$(echo "${CURRENT_SIMULATOR[2]}" | xargs)")
+            if [[ "$CURRENT_SIMULATOR_RUNTIME" = none ]]; then
+                lecho "$RED" 1 "Could not find runtime ${CURRENT_SIMULATOR[2]} in this list:"
+                xcrun simctl list runtimes
+                exit 1
+            else 
+                lecho "$RED" 1 "Creating simulator: $CURRENT_SIMULATOR_NAME,$CURRENT_SIMULATOR_DEVICE,$CURRENT_SIMULATOR_RUNTIME..."
+            fi
+            xcrun simctl create "$CURRENT_SIMULATOR_NAME" "$CURRENT_SIMULATOR_DEVICE" "$CURRENT_SIMULATOR_RUNTIME" > /dev/null || {
+                lecho "$RED" 1 "Could not create simulator: $simulator."
+            }
+        done
+        lecho "$BOLD_WHITE" 1 "Done!"
+    else
+        lecho "$GREEN" 1 "Nothing to do here."
+    fi
+    echo ""
 }
 
 ##############
@@ -620,3 +700,5 @@ make_portable_ruby_action
 homebrew_packages_action
 
 install_oh_my_zsh_action
+
+simulators_action

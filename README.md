@@ -74,6 +74,14 @@ Arguments:
         Install Oh My Zsh "powerlevel10k" theme.
         This flag does nothing if "--install-oh-my-zsh" is not specified.
         e.g. iosdev.sh --install-oh-my-zsh --install-oh-my-zsh-p10k
+    --simulators <pipe separated list>
+        Create simulators.
+        Each entry must be in the format: <name>,<device>,<runtime>.
+        e.g. iosdev.sh --simulators "Simulator,iPhone 13,iOS 15.0|Simulator2,iPhone 12,iOS 14.4"
+     --purge-simulators
+        Delete all iOS simulators.
+        This flag does nothing if "--simulators" is not specified.
+        e.g. iosdev.sh --simulators "Simulator,iPhone 13,iOS 15.0" --purge-simulators
     --help
         Show this message
 ```
@@ -125,6 +133,12 @@ vruby_deactivate                                  // to deactivate it
 iosdev.sh --ruby-version 2.7.2 --ruby-gems fastlane,cocoapods:1.11.2       // output: ./ruby folder
 source ./ruby_activate.sh                                                  // to activate it
 ruby_deactivate                                                            // to deactivate it
+```
+
+- Purge all simulators / create one for iPhone 13 / iOS 15, and one for iPhone 12 / iOS 14.4
+
+```
+./iosdev.sh --simulators "iPhone 13,iPhone 13,iOS 15.0|iPhone 12,iPhone 12,iOS 14.4" --purge-simulators
 ```
 
 - Deactivate colors
