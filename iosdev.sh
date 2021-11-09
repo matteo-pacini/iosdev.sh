@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.5.1"
+readonly VERSION="0.5.2"
 readonly VERSION_NAME="Flow"
 readonly LICENSE="MIT"
 
@@ -306,6 +306,20 @@ create_simulator() {
         lecho "$RED" 1 "Failed to create simulator $1:$2:$3. Exiting..."
         exit 1
     }
+}
+
+install_xcode_command_line_tools_if_needed() {
+    if ! xcode-select -p >/dev/null 2>&1; then
+        lecho "$RED" 0 "Installing Xcode command line tools... ⏳"
+        xcode-select --install > /dev/null 2>&1 || {
+            lecho "$RED" 0 "Failed to install Xcode command line tools. Exiting..."
+            exit 1
+        } && {
+            lecho "$BOLD_WHITE" 0 "Xcode command line tools dialog should be visible now."
+            lecho "$BOLD_WHITE" 0 "Please follow the instructions and reload this script when the installation is finished."
+            exit 0
+        }
+    fi
 }
 
 ###########
@@ -701,6 +715,8 @@ if [[ -d "/Applications/Xcodes.app" ]]; then
     lecho "$RED" 0 "If you installed it via Homebrew, please run 'brew uninstall homebrew/cask/xcodes' and try again."
     exit 1
 fi
+
+install_xcode_command_line_tools_if_needed
 
 configuration_action
 
