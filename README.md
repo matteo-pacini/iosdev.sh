@@ -89,13 +89,15 @@ Arguments:
 ## Run and forget
 
 ```
-curl -LsS https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh | bash -s -- ARGUMENTS
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/HEAD/iosdev.sh) -- ARGUMENTS"
 ```
 
 ## Installation
 
-    curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh
-    chmod +x /usr/local/bin/iosdev.sh
+```
+curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh
+chmod +x /usr/local/bin/iosdev.sh
+```
 
 ## Examples
 
