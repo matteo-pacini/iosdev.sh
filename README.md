@@ -89,7 +89,7 @@ Arguments:
 ## Run and forget
 
 ```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/HEAD/iosdev.sh) -- ARGUMENTS"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/HEAD/iosdev.sh)" -- ARGUMENTS
 ```
 
 ## Installation
