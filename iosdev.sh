@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.5.2"
+readonly VERSION="0.5.3"
 readonly VERSION_NAME="Flow"
 readonly LICENSE="MIT"
 
@@ -63,16 +63,26 @@ PURGE_SIMULATORS=false
 # Formatting #
 ##############
 
-###########
-# Palette #
-###########
+# Palette
 
-BOLD_WHITE="\033[1m"
-WHITE="\033[0m"
-RED="\033[0;31m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-NC='\033[0m'
+if [[ -z ${NO_COLOR+x} ]]; then 
+    WHITE="\033[1;37m"
+    RED="\033[0;31m"
+    GREEN="\033[0;32m"
+    YELLOW="\033[0;33m"
+    NC='\033[0m'
+    BOLD=$(tput bold)
+    NORM=$(tput sgr0)
+else
+    WHITE=''
+    RED=''
+    GREEN=''
+    YELLOW=''
+    NC=''
+    BOLD=''
+    NORM=''
+fi
+
 
 # Left-padded echo.
 # Prints a message, left-padded with spaces.
@@ -84,7 +94,7 @@ lecho() {
     for (( i=0; i<$2; i++ )); do
         left_padding="$left_padding "
     done
-    echo -e "$left_padding$1$3$NC"
+    echo -e "$left_padding$1$3$NC$NORM"
 }
 
 # Left-padded entry.
@@ -315,8 +325,8 @@ install_xcode_command_line_tools_if_needed() {
             lecho "$RED" 0 "Failed to install Xcode command line tools. Exiting..."
             exit 1
         } && {
-            lecho "$BOLD_WHITE" 0 "Xcode command line tools dialog should be visible now."
-            lecho "$BOLD_WHITE" 0 "Please follow the instructions and reload this script when the installation is finished."
+            lecho "${WHITE}${BOLD}" 0 "Xcode command line tools dialog should be visible now."
+            lecho "${WHITE}${BOLD}" 0 "Please follow the instructions and reload this script when the installation is finished."
             exit 0
         }
     fi
@@ -341,8 +351,8 @@ update_action() {
         lecho "$YELLOW" 0 "Latest version available on Github: $remote_version."
         lecho "$YELLOW" 0 "Version you are currently using: $VERSION."
         lecho "$YELLOW" 0 "To update to the latest version, please run:"
-        lecho "$BOLD_WHITE" 0 "curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh"
-        lecho "$BOLD_WHITE" 0 "chmod +x /usr/local/bin/iosdev.sh"
+        lecho "${WHITE}${BOLD}" 0 "curl -L https://raw.githubusercontent.com/Zi0P4tch0/iosdev.sh/master/iosdev.sh > /usr/local/bin/iosdev.sh"
+        lecho "${WHITE}${BOLD}" 0 "chmod +x /usr/local/bin/iosdev.sh"
         echo ""
     fi
 }
@@ -468,8 +478,6 @@ Arguments:
         Select the active Xcode version.
         This flag does nothing if "--xcodes" is not specified.
         e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
-    --no-color
-        Disable color output.
     --experimental
         Enable experimental features. 
         This option is not recommended, as it may break the script or have an unexpected behavior.
@@ -594,22 +602,11 @@ make_portable_ruby_action() {
         install_homebrew_package_if_needed "ruby-install"
         install_homebrew_package_if_needed "coreutils"
         install_ruby_if_needed "$RUBY_VERSION" "$RUBY_NAME"
-        lecho "$BOLD_WHITE" 1 "Done - source the script to activate the portable ruby!"
+        lecho "${WHITE}${BOLD}" 1 "Done - source the script to activate the portable ruby!"
     else
         lecho "$GREEN" 1 "Nothing to do here."
     fi
     echo ""
-}
-
-clear_palette_action() {
-    if [[ "$COLOR_OUTPUT" = false ]]; then
-        BOLD_WHITE=""
-        WHITE=""
-        RED=""
-        GREEN=""
-        YELLOW=""   
-        NC="" 
-    fi
 }
 
 homebrew_packages_action() {
@@ -698,7 +695,6 @@ fi
 
 parse_command_line_arguments_action "$@"
 
-clear_palette_action
 
 system_info_action
 

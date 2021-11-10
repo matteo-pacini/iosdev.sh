@@ -46,8 +46,6 @@ Arguments:
         Select the active Xcode version.
         This flag does nothing if "--xcodes" is not specified.
         e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
-    --no-color
-        Disable color output.
     --experimental
         Enable experimental features. 
         This option is not recommended, as it may break the script or have an unexpected behavior.
@@ -143,15 +141,15 @@ ruby_deactivate                                                            // to
 ./iosdev.sh --simulators "iPhone 13,iPhone 13,iOS 15.0|iPhone 12,iPhone 12,iOS 14.4" --purge-simulators
 ```
 
-- Deactivate colors
+- [Deactivate colors](https://no-color.org/)
 
 ```
-iosdev.sh [...] --no-color
+NO_COLOR=1 iosdev.sh [...] 
 ```
 
 ## Automate
 
-You can use `expect` combined with `--no-color` to automate the script.
+You can use `expect` combined with `NO_COLOR=1` to automate the script.
 
 A simple example would be:
 
@@ -160,7 +158,7 @@ A simple example would be:
 
 set timeout -1
 set password [lindex $argv 0]
-spawn ./iosdev.sh --xcodes 13.1,13.2 --purge-xcodes --active-xcode 13.1 --no-color
+spawn NO_COLOR=1 ./iosdev.sh --xcodes 13.1,13.2 --purge-xcodes --active-xcode 13.1 
 match_max 100000
 
 expect -exact "Do you want to continue? \[y/n\] "
