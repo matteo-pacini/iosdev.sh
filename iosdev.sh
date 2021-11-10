@@ -386,9 +386,6 @@ parse_command_line_arguments_action() {
             fi
             ACTIVE_XCODE="$1"
             ;;
-        --no-color)
-            COLOR_OUTPUT=false
-            ;;
         --experimental)
             EXPERIMENTAL=true
             ;;
