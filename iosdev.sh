@@ -25,7 +25,7 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.5.3"
+readonly VERSION="0.5.4"
 readonly VERSION_NAME="Flow"
 readonly LICENSE="MIT"
 
@@ -622,7 +622,7 @@ install_oh_my_zsh_action() {
         if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
             lecho "$RED" 1 "Installing Oh My Zsh... ⌛️"
             sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh && exit 0)"
-            lecho "$BOLD_WHITE" 1 "Done - please restart your terminal to see the changes."
+            lecho "${WHITE}${BOLD}" 1 "Done - please restart your terminal to see the changes."
         else
             lecho "$GREEN" 1 "Oh My Zsh is already installed."
         fi
@@ -632,7 +632,7 @@ install_oh_my_zsh_action() {
                 git clone --depth=1 "https://github.com/romkatv/powerlevel10k.git" "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
                 lecho "$RED" 1 "Setting P10K theme in .zshrc..."
                 sed -i '' 's|\(ZSH_THEME="\).*\("\)|\1powerlevel10k/powerlevel10k\2|g' "$HOME/.zshrc"
-                lecho "$BOLD_WHITE" 1 "Done - please restart your terminal to see the changes."
+                lecho "${WHITE}${BOLD}" 1 "Done - please restart your terminal to see the changes."
             else
                 lecho "$GREEN" 1 "P10K theme is already installed."
             fi
@@ -657,7 +657,7 @@ simulators_action() {
         for simulator in "${SIMULATORS[@]}"; do
             clean_up_simulator_and_run "$simulator" create_simulator
         done
-        lecho "$BOLD_WHITE" 1 "Done!"
+        lecho "${WHITE}${BOLD}" 1 "Done!"
     else
         lecho "$GREEN" 1 "Nothing to do here."
     fi
