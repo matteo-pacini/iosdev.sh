@@ -46,11 +46,6 @@ Arguments:
         Select the active Xcode version.
         This flag does nothing if "--xcodes" is not specified.
         e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
-    --experimental
-        Enable experimental features. 
-        This option is not recommended, as it may break the script or have an unexpected behavior.
-        Current experimental features are:
-            - M1 macs support
     --ruby-version <version>
         Specify the portable Ruby version to install.
         e.g. iosdev.sh --ruby-version 2.7.2

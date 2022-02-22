@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #####################################################################################
-# Copyright (c) 2021 Matteo Pacini                                                  #
+# Copyright (c) 2021-2022 Matteo Pacini                                             #
 #                                                                                   #
 # Permission is hereby granted, free of charge, to any person obtaining a copy      #
 # of this software and associated documentation files (the "Software"), to deal     #
@@ -25,8 +25,8 @@
 set -euo pipefail
 
 readonly AUTHOR="Matteo Pacini <m+github@matteopacini.me>"
-readonly VERSION="0.5.4"
-readonly VERSION_NAME="Flow"
+readonly VERSION="0.6"
+readonly VERSION_NAME="Storms Battering Britain"
 readonly LICENSE="MIT"
 
 #################
@@ -40,8 +40,6 @@ XCODES=()
 ACTIVE_XCODE=
 
 PURGE_XCODES=false
-
-EXPERIMENTAL=false
 
 RUBY_VERSION=
 
@@ -384,9 +382,6 @@ parse_command_line_arguments_action() {
             fi
             ACTIVE_XCODE="$1"
             ;;
-        --experimental)
-            EXPERIMENTAL=true
-            ;;
         --ruby-version)
             shift
             if [[ -z "${1-}" ]] || [[ "${1-}" == --* ]]; then
@@ -473,11 +468,6 @@ Arguments:
         Select the active Xcode version.
         This flag does nothing if "--xcodes" is not specified.
         e.g. iosdev.sh --xcodes 13.1,13.2 --active-xcode 13.1
-    --experimental
-        Enable experimental features. 
-        This option is not recommended, as it may break the script or have an unexpected behavior.
-        Current experimental features are:
-            - M1 macs support
     --ruby-version <version>
         Specify the portable Ruby version to install.
         e.g. iosdev.sh --ruby-version 2.7.2
@@ -529,7 +519,6 @@ system_info_action() {
 
 configuration_action() {
     lecho "$YELLOW" 0 "Configuration"
-    entry "$GREEN" 1 "Experimental features" "$EXPERIMENTAL"
     lecho "$YELLOW" 1 "Xcodes"
     entry "$GREEN" 2 "Xcodes to install" "${XCODES[*]:-<none>}"
     entry "$GREEN" 2 "Purge flag" "${PURGE_XCODES}"
@@ -690,13 +679,7 @@ fi
 
 parse_command_line_arguments_action "$@"
 
-
 system_info_action
-
-if [[ "$(uname -m)" == "arm64" ]] && [[ "$EXPERIMENTAL" = false ]]; then
-    lecho "$RED" 0 "This script is for Intel macOS only. Apple Silicon will be supported in a future release."
-    exit 1
-fi
 
 update_action
 
